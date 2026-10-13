@@ -29,7 +29,7 @@ function paraCardViewModel(dto: Pokemon): PokemonCardViewModel {
     id: dto.id,
     name: dto.name,
     displayName: displayName,
-    imageUrl: dto.sprite,
+    imageUrl: dto.spriteUrl,
     imageAlt: `Imagem de ${displayName}`,
     types: paraTiposViewModel(dto.types),
     background: obterCorDeBackgroundDosTipos(types),
