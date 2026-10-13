@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { map, switchMap } from 'rxjs';
+import { catchError, forkJoin, map, Observable, of, switchMap } from 'rxjs';
 import { PokemonService } from '../data/pokemon.service';
 import { PokemonDetails, PokemonTypeViewModel } from '../pokemon.model';
 import { obterCorDeBackgroundDosTipos, paraTiposViewModel, paraTitleCase } from '../pokemon.util';
@@ -16,6 +16,15 @@ interface PokemonStatViewModel {
   readonly displayName: string;
   readonly value: number;
   readonly percentage: number;
+}
+
+interface PokemonNavigationViewModel {
+  readonly id: number;
+  readonly number: string;
+  readonly name: string;
+  readonly displayName: string;
+  readonly spriteUrl: string | null;
+  readonly spriteAlt: string;
 }
 
 interface PokemonDetailsViewModel {
@@ -33,6 +42,8 @@ interface PokemonDetailsViewModel {
   readonly types: readonly PokemonTypeViewModel[];
   readonly abilities: readonly PokemonAbilityViewModel[];
   readonly stats: readonly PokemonStatViewModel[];
+  readonly previous: PokemonNavigationViewModel | null;
+  readonly next: PokemonNavigationViewModel | null;
 }
 
 const STAT_LABELS: Readonly<Record<string, string>> = {
@@ -64,7 +75,28 @@ function obterPercentualEstatistica(value: number): number {
   return Math.min((value / 255) * 100, 100);
 }
 
-function paraDetalhesViewModel(dto: PokemonDetails): PokemonDetailsViewModel {
+function paraNavegacaoViewModel(dto: PokemonDetails | null): PokemonNavigationViewModel | null {
+  if (!dto) {
+    return null;
+  }
+
+  const displayName = paraTitleCase(dto.name);
+
+  return {
+    id: dto.id,
+    number: paraNumeroPokemon(dto.id),
+    name: dto.name,
+    displayName: displayName,
+    spriteUrl: dto.spriteUrl,
+    spriteAlt: `Sprite de ${displayName}`,
+  };
+}
+
+function paraDetalhesViewModel(
+  dto: PokemonDetails,
+  previous: PokemonDetails | null,
+  next: PokemonDetails | null,
+): PokemonDetailsViewModel {
   const displayName = paraTitleCase(dto.name);
   const types = paraTiposViewModel(dto.types);
 
@@ -88,6 +120,9 @@ function paraDetalhesViewModel(dto: PokemonDetails): PokemonDetailsViewModel {
       value: baseValue,
       percentage: obterPercentualEstatistica(baseValue),
     })),
+
+    previous: paraNavegacaoViewModel(previous),
+    next: paraNavegacaoViewModel(next),
   };
 }
 
@@ -105,7 +140,22 @@ export class DetalhesPokemon {
     this.route.paramMap.pipe(
       map((params) => params.get('name') ?? ''),
       switchMap((nome) => this.pokemonService.buscarPorNome(nome)),
-      map(paraDetalhesViewModel),
+      switchMap((pokemon) =>
+        forkJoin({
+          pokemon: of(pokemon),
+          previous: this.buscarVizinho(pokemon.id - 1),
+          next: this.buscarVizinho(pokemon.id + 1),
+        }),
+      ),
+      map(({ pokemon, previous, next }) => paraDetalhesViewModel(pokemon, previous, next)),
     ),
   );
+
+  private buscarVizinho(id: number): Observable<PokemonDetails | null> {
+    if (id < 1) {
+      return of(null);
+    }
+
+    return this.pokemonService.buscarPorId(id).pipe(catchError(() => of(null)));
+  }
 }

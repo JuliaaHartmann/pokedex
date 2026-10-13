@@ -54,7 +54,13 @@ export class PokemonService {
   buscarPorNome(nome: string): Observable<PokemonDetails> {
     const nomeNormalizado = nome.trim().toLowerCase();
     return this.http
-      .get<PokemonRespostaHttp>(`${this.apiUrl}${nomeNormalizado}`)
+      .get<PokemonRespostaHttp>(`${this.apiUrl}${encodeURIComponent(nomeNormalizado)}`)
+      .pipe(map(mapearRespostaDetalhesPokemon));
+  }
+
+  buscarPorId(id: number): Observable<PokemonDetails> {
+    return this.http
+      .get<PokemonRespostaHttp>(`${this.apiUrl}${id}`)
       .pipe(map(mapearRespostaDetalhesPokemon));
   }
 }
