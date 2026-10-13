@@ -3,7 +3,12 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { PokemonService } from '../data/pokemon.service';
 import { Pokemon, PokemonTypeViewModel } from '../pokemon.model';
 import { map } from 'rxjs';
-import { obterCorDeBackgroundDosTipos, obterCorDoTipo, paraTitleCase } from '../pokemon.util';
+import {
+  obterCorDeBackgroundDosTipos,
+  obterCorDoTipo,
+  paraTiposViewModel,
+  paraTitleCase,
+} from '../pokemon.util';
 import { RouterLink } from '@angular/router';
 
 interface PokemonCardViewModel {
@@ -18,11 +23,7 @@ interface PokemonCardViewModel {
 
 function paraCardViewModel(dto: Pokemon): PokemonCardViewModel {
   const displayName = paraTitleCase(dto.name);
-  const types = dto.types.map((type) => ({
-    name: type,
-    displayName: paraTitleCase(type),
-    color: obterCorDoTipo(type.toLowerCase()),
-  }));
+  const types = paraTiposViewModel(dto.types);
 
   return {
     id: dto.id,
@@ -30,7 +31,7 @@ function paraCardViewModel(dto: Pokemon): PokemonCardViewModel {
     displayName: displayName,
     imageUrl: dto.sprite,
     imageAlt: `Imagem de ${displayName}`,
-    types: types,
+    types: paraTiposViewModel(dto.types),
     background: obterCorDeBackgroundDosTipos(types),
   };
 }
