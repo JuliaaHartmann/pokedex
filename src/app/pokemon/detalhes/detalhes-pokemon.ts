@@ -94,6 +94,7 @@ function paraDetalhesViewModel(dto: PokemonDetails): PokemonDetailsViewModel {
 @Component({
   imports: [RouterLink],
   selector: 'app-detalhes-pokemon',
+  styleUrl: './detalhes-pokemon.scss',
   templateUrl: './detalhes-pokemon.html',
 })
 export class DetalhesPokemon {
